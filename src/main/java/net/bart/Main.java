@@ -21,47 +21,29 @@ import static spark.Spark.*;
 import static spark.debug.DebugScreen.*;
 
 public class Main {
-
+    private static final String UPLOAD_DIR = "upload";
     public static void main(String[] args){
         port(getHerokuAssignedPort());
-        enableDebugScreen();
+        //enableDebugScreen();
 
-        File uploadDir = new File("upload");
+        File uploadDir = new File(UPLOAD_DIR);
         uploadDir.mkdir(); // create the upload directory if it doesn't exist
 
-        staticFiles.externalLocation("upload");
+        staticFiles.externalLocation(UPLOAD_DIR);
 
-        get("/", (req, res) ->
-                "<form method='post' enctype='multipart/form-data'>" // note the enctype
-                        + "    <input type='file' name='uploaded_file' accept='.txt'>" // make sure to call getPart using the same "name" in the post
-                        + "    <button>Upload Logs</button>"
-                        + "</form>"
-        );
-
-        post("/", (req, res) -> {
+        get("/", (req, res) -> {
             String ret = "";
-            Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
+            File lastFile = lastFileModified(UPLOAD_DIR);
 
-            req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
-
-            try (InputStream input = req.raw().getPart("uploaded_file").getInputStream()) { // getPart needs to use same "name" as input field in form
-                Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            if(lastFile == null){
+                return "<h1>No Data</h1>";
             }
-
-            logInfo(req, tempFile);
-
-
-
-
-
-
-            ret += "Hello World!<br>";
 
             Config c = readConfig();
             List<String> lines = new ArrayList<String>();
 
             try {
-                lines = FileUtils.readLines(tempFile.toFile());
+                lines = FileUtils.readLines(lastFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -69,13 +51,30 @@ public class Main {
             Parser p = new Parser(lines, c);
             ParserSummary ps = p.getParserSummary();
 
+
+            ret += "<h1>Last log at: " + lastFile.lastModified() + "</h1>";
+            ret += "<h2>BART outputs:</h2>";
+
             ret += "Build Status: " + ps.getBuildStatus() + "<br>";
             ret += "Error cause: " + ps.getErrorCause() + "<br>";
             ret += "Question: " + ps.getBestQuestion() + "<br>";
 
-            ret += "<h1>You uploaded this image:<h1><img src='" + tempFile.getFileName() + "'>";
             return ret;
+        });
 
+        post("/", (req, res) -> {
+            //String ret = "";
+            Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
+
+            req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
+
+            try (InputStream input = req.raw().getPart("uploaded_file").getInputStream()) { // getPart needs to use same "name" as input field in form
+                Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                logInfo(req, tempFile);
+                return "success!";
+            }catch (Exception e){
+                return e.getStackTrace().toString();
+            }
         });
     }
     static int getHerokuAssignedPort() {
@@ -113,5 +112,23 @@ public class Main {
             }
         }
         return null;
+    }
+
+    private static File lastFileModified(String dir) {
+        File fl = new File(dir);
+        File[] files = fl.listFiles(new FileFilter() {
+            public boolean accept(File file) {
+                return file.isFile();
+            }
+        });
+        long lastMod = Long.MIN_VALUE;
+        File choice = null;
+        for (File file : files) {
+            if (file.lastModified() > lastMod) {
+                choice = file;
+                lastMod = file.lastModified();
+            }
+        }
+        return choice;
     }
 }
