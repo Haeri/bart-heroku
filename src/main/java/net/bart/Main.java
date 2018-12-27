@@ -21,7 +21,7 @@ import java.nio.file.*;
 import static spark.Spark.*;
 import static spark.debug.DebugScreen.*;
 
-public class main {
+public class Main {
     public static void main(String[] args){
         enableDebugScreen();
 
