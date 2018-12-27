@@ -1,1 +1,1 @@
-web: java -jar target/bart-server-1.0.jar
+web: java -jar target/BART.jar

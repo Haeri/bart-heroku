@@ -38,7 +38,7 @@ public class Main {
         );
 
         post("/", (req, res) -> {
-
+            String ret = "";
             Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
 
             req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
@@ -54,13 +54,13 @@ public class Main {
 
 
 
-            System.out.println("Hello World!");
+            ret += "Hello World!<br>";
 
             Config c = readConfig();
             List<String> lines = new ArrayList<String>();
 
             try {
-                lines = FileUtils.readLines(new File("src/main/resources/logs/20181213-183200.txt"));
+                lines = FileUtils.readLines(tempFile.toFile());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -68,12 +68,12 @@ public class Main {
             Parser p = new Parser(lines, c);
             ParserSummary ps = p.getParserSummary();
 
-            System.out.println("Build Status: " + ps.getBuildStatus());
-            System.out.println("Error cause: " + ps.getErrorCause());
-            System.out.println("Question: " + ps.getBestQuestion());
+            ret += "Build Status: " + ps.getBuildStatus() + "<br>";
+            ret += "Error cause: " + ps.getErrorCause() + "<br>";
+            ret += "Question: " + ps.getBestQuestion() + "<br>";
 
-
-            return "<h1>You uploaded this image:<h1><img src='" + tempFile.getFileName() + "'>";
+            ret += "<h1>You uploaded this image:<h1><img src='" + tempFile.getFileName() + "'>";
+            return ret;
 
         });
     }
