@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import spark.*;
 import javax.servlet.*;
@@ -22,7 +21,9 @@ import static spark.Spark.*;
 import static spark.debug.DebugScreen.*;
 
 public class Main {
+
     public static void main(String[] args){
+        port(getHerokuAssignedPort());
         enableDebugScreen();
 
         File uploadDir = new File("upload");
@@ -32,8 +33,8 @@ public class Main {
 
         get("/", (req, res) ->
                 "<form method='post' enctype='multipart/form-data'>" // note the enctype
-                        + "    <input type='file' name='uploaded_file' accept='.png'>" // make sure to call getPart using the same "name" in the post
-                        + "    <button>Upload picture</button>"
+                        + "    <input type='file' name='uploaded_file' accept='.txt'>" // make sure to call getPart using the same "name" in the post
+                        + "    <button>Upload Logs</button>"
                         + "</form>"
         );
 
@@ -77,20 +78,12 @@ public class Main {
 
         });
     }
-
-    private static List<String> readLogs(String filePath){
-        try{
-            Scanner s = new Scanner(new File(filePath));
-            List<String> list = new ArrayList<>();
-            while (s.hasNext()){
-                list.add(s.next());
-            }
-            s.close();
-            return list;
-        }catch (Exception e) {
-            e.printStackTrace();
+    static int getHerokuAssignedPort() {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (processBuilder.environment().get("PORT") != null) {
+            return Integer.parseInt(processBuilder.environment().get("PORT"));
         }
-        return null;
+        return 4567; //return default port if heroku-port isn't set (i.e. on localhost)
     }
 
     private static Config readConfig() {
