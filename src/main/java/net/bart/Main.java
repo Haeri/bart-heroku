@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +19,11 @@ import javax.servlet.http.*;
 import java.io.*;
 import java.nio.file.*;
 import static spark.Spark.*;
-import static spark.debug.DebugScreen.*;
 
 public class Main {
     private static final String UPLOAD_DIR = "upload";
     public static void main(String[] args){
         port(getHerokuAssignedPort());
-        //enableDebugScreen();
 
         File uploadDir = new File(UPLOAD_DIR);
         uploadDir.mkdir(); // create the upload directory if it doesn't exist
@@ -51,8 +50,9 @@ public class Main {
             Parser p = new Parser(lines, c);
             ParserSummary ps = p.getParserSummary();
 
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 
-            ret += "<h1>Last log at: " + lastFile.lastModified() + "</h1>";
+            ret += "<h1>Last log at: " + sdf.format(lastFile.lastModified()) + "</h1>";
             ret += "<h2>BART outputs:</h2>";
 
             ret += "Build Status: " + ps.getBuildStatus() + "<br>";
